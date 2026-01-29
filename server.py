@@ -41,6 +41,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root route for health check
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": "Car Wash Backend is Running!",
+        "docs": "/docs"
+    }
+
 api_router = APIRouter(prefix="/api")
 
 # Enums
