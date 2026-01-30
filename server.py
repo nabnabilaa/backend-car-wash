@@ -21,25 +21,21 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 # Use getenv to avoid KeyErrors during build/start if env vars are missing
 mongo_url = os.environ.get('MONGO_URL')
-db_name = os.environ.get('DB_NAME')
+db_name = os.environ.get('DB_NAME', 'carwash_db')
 
 if not mongo_url:
-    print("WARNING: MONGO_URL not found in environment variables! Using default localhost.")
-    mongo_url = "mongodb://localhost:27017"
-
-if not db_name:
-    print("WARNING: DB_NAME not found in environment variables! Using default 'carwash_db'.")
-    db_name = "carwash_db"
-
-try:
-    client = AsyncIOMotorClient(mongo_url)
-    db = client[db_name]
-    print(f"Connected to MongoDB: {db_name}")
-except Exception as e:
-    print(f"Failed to connect to MongoDB: {e}")
-    # We don't raise here to allow the app to at least start for health checks
+    print("WARNING: MONGO_URL not found in environment variables! DB connection disabled.")
     client = None
     db = None
+else:
+    try:
+        client = AsyncIOMotorClient(mongo_url)
+        db = client[db_name]
+        print(f"Connected to MongoDB: {db_name}")
+    except Exception as e:
+        print(f"Failed to connect to MongoDB: {e}")
+        client = None
+        db = None
 
 # JWT Config
 JWT_SECRET = os.environ.get('JWT_SECRET', 'carwash-pos-secret-key-change-in-production')
