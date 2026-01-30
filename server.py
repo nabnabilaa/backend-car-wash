@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -58,10 +58,9 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", 
-        "http://127.0.0.1:3000",
         "https://frontend-car-wash.vercel.app",
-        "https://frontend-car-wash.vercel.app/"
+        "http://localhost:3000",
+        "http://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
