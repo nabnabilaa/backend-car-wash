@@ -773,6 +773,8 @@ async def delete_outlet(outlet_id: str, current_user: User = Depends(get_current
 # Routes - Shifts
 @api_router.post("/shifts/open", response_model=Shift)
 async def open_shift(shift_data: ShiftOpen, current_user: User = Depends(get_current_user)):
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
     # Check if there's an open shift for this kasir
     existing = await db.shifts.find_one({"kasir_id": shift_data.kasir_id, "status": "open"}, {"_id": 0})
     if existing:
@@ -827,6 +829,8 @@ async def add_petty_cash(data: PettyCashCreate, current_user: User = Depends(get
 
 @api_router.post("/shifts/close", response_model=Shift)
 async def close_shift(shift_data: ShiftClose, current_user: User = Depends(get_current_user)):
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
     shift_doc = await db.shifts.find_one({"id": shift_data.shift_id}, {"_id": 0})
     if not shift_doc:
         raise HTTPException(status_code=404, detail="Shift not found")
@@ -912,6 +916,8 @@ async def get_shift_summary(shift_id: str, current_user: User = Depends(get_curr
 @api_router.get("/shifts/current")
 async def get_current_shift(current_user: User = Depends(get_current_user)):
     # Use current_user.id instead of kasir_id argument
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
     shift = await db.shifts.find_one({"kasir_id": current_user.id, "status": "open"}, {"_id": 0})
     if not shift:
         return None
@@ -1590,6 +1596,8 @@ async def get_transaction_detail(transaction_id: str, current_user: User = Depen
 # Routes - Dashboard
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     
     # Today's transactions
