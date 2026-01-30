@@ -27,23 +27,9 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-# Use getenv to avoid KeyErrors during build/start if env vars are missing
-mongo_url = os.environ.get('MONGO_URL')
-db_name = os.environ.get('DB_NAME', 'carwash_db')
-
-if not mongo_url:
-    print("WARNING: MONGO_URL not found in environment variables! DB connection disabled.")
-    client = None
-    db = None
-else:
-    try:
-        client = AsyncIOMotorClient(mongo_url)
-        db = client[db_name]
-        print(f"Connected to MongoDB: {db_name}")
-    except Exception as e:
-        print(f"Failed to connect to MongoDB: {e}")
-        client = None
-        db = None
+# Initialize globals
+client = None
+db = None
 
 # JWT Config
 JWT_SECRET = os.environ.get('JWT_SECRET', 'carwash-pos-secret-key-change-in-production')
@@ -55,6 +41,8 @@ security = HTTPBearer()
 app = FastAPI()
 
 # CORS Middleware - MUST be added before routes
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=[
         "https://frontend-car-wash.vercel.app",
         "http://localhost:3000",
@@ -64,6 +52,20 @@ app = FastAPI()
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_db_client():
+    global client, db
+    mongo_url = os.environ.get("MONGO_URL")
+    if mongo_url:
+        try:
+            client = AsyncIOMotorClient(mongo_url)
+            db = client[os.environ.get("DB_NAME", "carwash_db")]
+            print("Connected to MongoDB")
+        except Exception as e:
+            print(f"Failed to connect to MongoDB: {e}")
+    else:
+        print("WARNING: MONGO_URL not found. Database disabled.")
 
 # Root route for health check
 @app.get("/")
