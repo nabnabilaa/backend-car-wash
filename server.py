@@ -13,7 +13,15 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 from enum import Enum
-from whatsapp_helper import whatsapp
+
+try:
+    from whatsapp_helper import whatsapp
+except Exception as e:
+    print(f"WARNING: WhatsApp helper could not be loaded: {e}")
+    class MockWhatsApp:
+        def send_receipt(self, *args, **kwargs): return {"success": False, "error": "WhatsApp service unavailable"}
+        def send_message(self, *args, **kwargs): return {"success": False, "error": "WhatsApp service unavailable"}
+    whatsapp = MockWhatsApp()
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -49,7 +57,12 @@ app = FastAPI()
 # CORS Middleware - MUST be added before routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://frontend-car-wash.vercel.app",
+        "https://frontend-car-wash.vercel.app/"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
