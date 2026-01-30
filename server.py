@@ -1035,6 +1035,8 @@ async def create_membership(membership_data: MembershipCreate, current_user: Use
 
 @api_router.get("/memberships", response_model=List[Membership])
 async def get_memberships(current_user: User = Depends(get_current_user)):
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
     memberships = await db.memberships.find({}, {"_id": 0}).to_list(1000)
     now = datetime.now(timezone.utc)
     
@@ -1680,6 +1682,8 @@ async def get_public_services():
 # Routes - Promotions
 @api_router.get("/promotions", response_model=List[Promotion])
 async def get_promotions(current_user: User = Depends(get_current_user)):
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database service unavailable")
     promotions = await db.promotions.find({}, {"_id": 0}).to_list(1000)
     # Convert dates
     for p in promotions:
