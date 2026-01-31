@@ -91,6 +91,8 @@ class MembershipType(str, Enum):
     QUARTERLY = "quarterly"
     BIANNUAL = "biannual"
     ANNUAL = "annual"
+    PREMIUM = "premium"
+    VIP = "vip"
 
 class MembershipStatus(str, Enum):
     ACTIVE = "active"
@@ -1884,6 +1886,11 @@ async def get_expenses():
     for expense in expenses:
         if isinstance(expense.get('date'), str):
             expense['date'] = datetime.fromisoformat(expense['date'])
+        
+        # Backwards compatibility for seed data (recorded_by -> created_by)
+        if 'created_by' not in expense and 'recorded_by' in expense:
+            expense['created_by'] = expense['recorded_by']
+            
     return expenses
 
 @api_router.post("/expenses", response_model=Expense)
