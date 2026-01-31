@@ -884,29 +884,44 @@ async def seed_data():
     existing_shifts_count = await db.shifts.count_documents({})
     
     # Check if we already have historical data (if total shifts > 5, assume seeded)
-    if existing_shifts_count < 5:
+    # ALWAYS generate historical data for demo purposes (commented out check)
+    # if existing_shifts_count < 5:
+    if True:
         history_transactions = []
         history_shifts = []
         history_expenses = []
         
-        # Loop last 30 days
-        for i in range(1, 31):
+        # Loop last 30 days INCLUDING TODAY (range 0 to 30)
+        for i in range(0, 31):
             day_offset = datetime.now(timezone.utc) - timedelta(days=i)
             day_str = day_offset.strftime("%Y-%m-%d")
             
-            # Skip if it clashes with our specific "yesterday" manual seed
-            if i == 1: 
-                continue
-                
-            # Randomize daily volume
-            num_tx = random.randint(5, 15)
+            # Skip if it clashes with our specific "yesterday" manual seed (i=1 was yesterday)
+            # We will overwrite yesterday's generated data with the manual one above if we want, 
+            # OR just let them coexist. For simplicity, let's generate for yesterday too so we have volume.
+            # if i == 1: continue 
+
+            # Randomize daily volume (Today gets partial volume)
+            # INCREASED DATA VOLUME 
+            num_tx = random.randint(20, 50)
+            if i == 0: # Today
+                 num_tx = random.randint(10, 25) 
+            
             daily_revenue = 0
             daily_cash = 0
             
             # Create Shift for this day
             shift_id = str(uuid.uuid4())
             shift_start = day_offset.replace(hour=8, minute=0, second=0)
+            
+            # Status
+            status = "closed"
             shift_end = day_offset.replace(hour=17, minute=0, second=0)
+            
+            # If Today, make it OPEN
+            if i == 0:
+                status = "open"
+                shift_end = None # Still open
             
             # Transactions
             for _ in range(num_tx):
@@ -966,7 +981,7 @@ async def seed_data():
                     "payment_method": method,
                     "amount_paid": total,
                     "change": 0,
-                    "created_at": day_offset.replace(hour=random.randint(9, 16), minute=random.randint(0, 59)).isoformat()
+                    "created_at": day_offset.replace(hour=random.randint(0, 8), minute=random.randint(0, 59)).isoformat()
                 }
                 history_transactions.append(tx)
                 
@@ -980,22 +995,32 @@ async def seed_data():
                 amt = random.choice([20000, 50000, 100000])
                 exp = {
                     "id": str(uuid.uuid4()),
-                    "date": day_offset.replace(hour=13).isoformat(),
+                    "date": day_offset.replace(hour=4).isoformat(), # Earlier expense
                     "amount": amt,
                     "category": "operational",
                     "description": f"Expense harian {day_str}",
                     "payment_method": "cash",
                     "recorded_by": kasir1_id,
+                    "created_by": "Budi Santoso",
                     "shift_id": shift_id,
-                    "created_at": day_offset.replace(hour=13, minute=5).isoformat()
+                    "created_at": day_offset.replace(hour=4, minute=5).isoformat()
                 }
                 history_expenses.append(exp)
                 petty_cash_expense += amt
 
             # Shift Record
             opening = 500000
-            system_expected = opening + daily_cash - petty_cash_expense
-            variance = random.choice([0, 0, 0, -5000, 5000]) # occasional variance
+            
+            # If Today (Open), closing balance is None
+            closing_balance = None
+            if status == "closed":
+                system_expected = opening + daily_cash - petty_cash_expense
+                variance = random.choice([0, 0, 0, -5000, 5000]) 
+                closing_balance = system_expected + variance
+            else:
+                # Open shift
+                system_expected = opening + daily_cash - petty_cash_expense # Current system expectation
+                variance = 0
             
             shift = {
                 "id": shift_id,
@@ -1003,15 +1028,15 @@ async def seed_data():
                 "kasir_name": "Budi Santoso",
                 "outlet_id": outlet_sudirman_id,
                 "opening_balance": opening,
-                "closing_balance": system_expected + variance,
-                "expected_balance": system_expected,
-                "variance": variance,
+                "closing_balance": closing_balance, # None if open
+                "expected_balance": system_expected if status == "closed" else None,
+                "variance": variance if status == "closed" else None,
                 "total_cash_sales": daily_cash,
                 "petty_cash": petty_cash_expense,
                 "cash_drop": 0,
                 "start_time": shift_start.isoformat(),
-                "end_time": shift_end.isoformat(),
-                "status": "closed",
+                "end_time": shift_end.isoformat() if shift_end else None,
+                "status": status,
                 "notes": "Auto-generated history"
             }
             history_shifts.append(shift)

@@ -1555,7 +1555,7 @@ async def get_transactions(current_user: User = Depends(get_current_user)):
         # Owner, Manager, Teknisi can see all
         query = {}
     
-    transactions = await db.transactions.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    transactions = await db.transactions.find(query, {"_id": 0}).sort("created_at", -1).to_list(5000)
     for transaction in transactions:
         if isinstance(transaction.get('created_at'), str):
             transaction['created_at'] = datetime.fromisoformat(transaction['created_at'])
