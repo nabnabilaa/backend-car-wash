@@ -45,10 +45,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://frontend-car-wash.vercel.app",
+        "https://platform-car-wash.vercel.app",
+        "https://platform-car-wash.vercel.app/",
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://localhost:8000",
     ],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
