@@ -44,6 +44,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://pos-car-wash.vercel.app",
+        "https://pos-car-wash.vercel.app/",
         "https://frontend-car-wash.vercel.app",
         "https://platform-car-wash.vercel.app",
         "https://platform-car-wash.vercel.app/",
